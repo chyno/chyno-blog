@@ -8,12 +8,7 @@ import CONFIG from '../content/index.json'
 import SUMMARY_JSON from '../content/summary.json'
 
 function Index(props) {
-  let pageJson = {}
-  if (props.router.query) {
-    if (props.router.query.fullUrl) {
-      pageJson = require(`../content${props.router.query.fullUrl}.json`)
-    }
-  }
+  const pageJson = props.pageJson
 
   return (
     <div>
@@ -40,7 +35,7 @@ function Index(props) {
         }
       `}</style>
       <Page
-        siteTitle={`${CONFIG.siteTitle} - ${pageJson.title}`}
+        siteTitle={`${CONFIG.siteTitle} - ${pageJson && pageJson.title}`}
         heroTitle={CONFIG.siteTitle}
         description={CONFIG.description}
         stylesheets={CONFIG.stylesheets}
@@ -54,13 +49,31 @@ function Index(props) {
   )
 }
 
-function Body(props) {
+function Body(props = {}) {
   return (
     <div className="content center mw6 pa3 pa4-ns">
       <h1 className="mt0 lh-title">{props.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: props.bodyHtml }}></div>
     </div>
   )
+}
+
+Index.getInitialProps = async function (req) {
+  if (req.pathname === '/post') {
+    return import(`../content${
+      req.query.filePath ? req.query.filePath
+        .replace('content', '')
+        .replace('.json', '') : req.query.fullUrl
+    }.json`)
+      .then((d) => {
+        return {
+          pageJson: d.default
+        }
+      }).catch((e) => {
+        console.log(e)
+      })
+  }
+  return {}
 }
 
 export default withRouter(Index)
